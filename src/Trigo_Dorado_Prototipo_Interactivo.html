@@ -1,0 +1,754 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>Trigo Dorado · Sistema de Gestión</title>
+<style>
+  :root{
+    --bg: #FBF7F1;
+    --surface: #FFFFFF;
+    --border: #E8DDCC;
+    --crust: #6B4226;
+    --crust-dark: #4A2C18;
+    --wheat: #D9A441;
+    --wheat-light: #F3DFAE;
+    --paprika: #C1440E;
+    --paprika-bg: #FBEAE3;
+    --sage: #4C7A50;
+    --sage-bg: #E9F2E9;
+    --text: #3A2A1D;
+    --muted: #8A7A68;
+    --radius: 10px;
+  }
+  *{box-sizing:border-box;}
+  html,body{height:100%;}
+  body{
+    margin:0; background:var(--bg); color:var(--text);
+    font-family:-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    font-size:14px;
+  }
+  h1,h2,h3,.brand{ font-family: Georgia,'Iowan Old Style','Times New Roman',serif; }
+  ::selection{ background:var(--wheat-light); }
+
+  /* ---------- LOGIN ---------- */
+  #login-screen{
+    min-height:100vh; display:flex; align-items:center; justify-content:center;
+    background:
+      radial-gradient(circle at 15% 20%, rgba(217,164,65,.18), transparent 40%),
+      radial-gradient(circle at 85% 80%, rgba(107,66,38,.15), transparent 45%),
+      var(--bg);
+  }
+  .login-card{
+    width:380px; background:var(--surface); border:1px solid var(--border);
+    border-radius:16px; padding:40px 36px; box-shadow:0 20px 50px -20px rgba(74,44,24,.25);
+  }
+  .login-mark{
+    width:52px;height:52px;border-radius:14px;background:var(--crust);
+    display:flex;align-items:center;justify-content:center;color:var(--wheat-light);
+    font-size:26px; margin-bottom:18px;
+  }
+  .login-card h1{ font-size:24px; margin:0 0 2px; color:var(--crust-dark); }
+  .login-sub{ color:var(--muted); font-size:13px; margin:0 0 26px; }
+  .field{ margin-bottom:16px; }
+  .field label{ display:block; font-size:12px; font-weight:600; color:var(--muted); margin-bottom:6px; letter-spacing:.02em; text-transform:uppercase;}
+  .field input, .field select{
+    width:100%; padding:10px 12px; border:1px solid var(--border); border-radius:8px;
+    font-size:14px; background:#fffdf9; color:var(--text);
+  }
+  .field input:focus, .field select:focus{ outline:2px solid var(--wheat); outline-offset:1px; border-color:var(--wheat); }
+  .role-toggle{ display:flex; gap:8px; margin-bottom:22px; }
+  .role-btn{
+    flex:1; padding:10px; border-radius:8px; border:1px solid var(--border); background:#fffdf9;
+    cursor:pointer; font-size:13px; font-weight:600; color:var(--muted); text-align:center;
+  }
+  .role-btn.active{ background:var(--crust); border-color:var(--crust); color:#fff; }
+  .btn-primary{
+    width:100%; padding:12px; border:none; border-radius:8px; background:var(--crust); color:#fff;
+    font-size:14px; font-weight:600; cursor:pointer;
+  }
+  .btn-primary:hover{ background:var(--crust-dark); }
+  .login-hint{ margin-top:16px; font-size:11.5px; color:var(--muted); text-align:center; line-height:1.5; }
+
+  /* ---------- APP SHELL ---------- */
+  #app{ display:none; min-height:100vh; }
+  .sidebar{
+    width:220px; background:var(--crust-dark); color:#EFE3D0; flex-shrink:0;
+    display:flex; flex-direction:column; padding:22px 14px;
+  }
+  .sidebar .brand{ color:#fff; font-size:19px; display:flex; align-items:center; gap:9px; padding:0 8px 22px; }
+  .brand .mark{ width:30px;height:30px;border-radius:8px;background:var(--wheat); color:var(--crust-dark); display:flex;align-items:center;justify-content:center; font-size:16px; font-family:inherit;}
+  .nav-item{
+    display:flex; align-items:center; gap:10px; padding:10px 12px; border-radius:8px; margin-bottom:2px;
+    color:#D9C9AE; cursor:pointer; font-size:13.5px; font-weight:500; border:none; background:none; width:100%; text-align:left;
+  }
+  .nav-item .ic{ width:18px; text-align:center; opacity:.85; }
+  .nav-item:hover{ background:rgba(255,255,255,.06); color:#fff; }
+  .nav-item.active{ background:var(--wheat); color:var(--crust-dark); font-weight:700; }
+  .sidebar-foot{ margin-top:auto; padding:12px 8px 0; border-top:1px solid rgba(255,255,255,.12); }
+  .who{ font-size:12px; color:#D9C9AE; margin-bottom:8px; }
+  .who b{ color:#fff; display:block; font-size:13px; }
+  .logout-btn{
+    width:100%; padding:8px; border-radius:8px; border:1px solid rgba(255,255,255,.2); background:none;
+    color:#EFE3D0; font-size:12.5px; cursor:pointer;
+  }
+  .logout-btn:hover{ background:rgba(255,255,255,.08); }
+
+  .main{ flex:1; min-width:0; display:flex; flex-direction:column; }
+  .topbar{
+    height:64px; border-bottom:1px solid var(--border); display:flex; align-items:center; justify-content:space-between;
+    padding:0 28px; background:var(--surface); flex-shrink:0;
+  }
+  .topbar h2{ font-size:19px; margin:0; color:var(--crust-dark); }
+  .topbar .sub{ font-size:12.5px; color:var(--muted); }
+  .clock{ font-size:12.5px; color:var(--muted); }
+  .content{ padding:26px 28px; overflow-y:auto; flex:1; }
+  .view{ display:none; }
+  .view.active{ display:block; }
+
+  /* ---------- COMMON WIDGETS ---------- */
+  .stat-grid{ display:grid; grid-template-columns:repeat(4,1fr); gap:16px; margin-bottom:24px; }
+  .stat-card{ background:var(--surface); border:1px solid var(--border); border-radius:var(--radius); padding:18px 20px; }
+  .stat-card .label{ font-size:11.5px; text-transform:uppercase; letter-spacing:.04em; color:var(--muted); font-weight:600; }
+  .stat-card .value{ font-size:26px; font-weight:700; color:var(--crust-dark); margin-top:6px; }
+  .stat-card .delta{ font-size:12px; margin-top:4px; }
+  .delta.up{ color:var(--sage); } .delta.warn{ color:var(--paprika); }
+
+  .panel{ background:var(--surface); border:1px solid var(--border); border-radius:var(--radius); padding:20px 22px; margin-bottom:20px; }
+  .panel-head{ display:flex; align-items:center; justify-content:space-between; margin-bottom:14px; }
+  .panel-head h3{ margin:0; font-size:15.5px; color:var(--crust-dark); }
+  .panel-head .hint{ font-size:12px; color:var(--muted); }
+
+  table{ width:100%; border-collapse:collapse; font-size:13px; }
+  th{ text-align:left; font-size:11px; text-transform:uppercase; letter-spacing:.03em; color:var(--muted); padding:8px 10px; border-bottom:1px solid var(--border); }
+  td{ padding:10px 10px; border-bottom:1px solid #F1E9DB; color:var(--text); }
+  tr:last-child td{ border-bottom:none; }
+  .badge{ padding:3px 9px; border-radius:20px; font-size:11px; font-weight:700; display:inline-block; }
+  .badge.ok{ background:var(--sage-bg); color:var(--sage); }
+  .badge.low{ background:var(--wheat-light); color:#8a5a10; }
+  .badge.out{ background:var(--paprika-bg); color:var(--paprika); }
+  .badge.role-admin{ background:var(--crust); color:#fff; }
+  .badge.role-vend{ background:var(--wheat-light); color:var(--crust-dark); }
+
+  .btn{ padding:7px 13px; border-radius:7px; border:1px solid var(--border); background:#fff; font-size:12.5px; cursor:pointer; font-weight:600; color:var(--text); }
+  .btn:hover{ background:#F7F1E6; }
+  .btn.primary{ background:var(--crust); color:#fff; border-color:var(--crust); }
+  .btn.primary:hover{ background:var(--crust-dark); }
+  .btn.ghost{ background:none; border-color:transparent; color:var(--muted); }
+  .btn.danger{ color:var(--paprika); }
+  .btn.sm{ padding:5px 9px; font-size:11.5px; }
+  .toolbar{ display:flex; gap:10px; margin-bottom:16px; align-items:center; }
+  .search{ flex:1; max-width:280px; padding:8px 12px; border:1px solid var(--border); border-radius:7px; font-size:13px; background:#fffdf9; }
+
+  .grid-2{ display:grid; grid-template-columns:1.3fr .9fr; gap:20px; align-items:start; }
+
+  /* Ventas / POS */
+  .pos-grid{ display:grid; grid-template-columns:1fr 340px; gap:20px; align-items:start; }
+  .product-tile{
+    border:1px solid var(--border); border-radius:9px; padding:12px; cursor:pointer; background:#fffefb;
+    display:flex; flex-direction:column; gap:4px;
+  }
+  .product-tile:hover{ border-color:var(--wheat); background:var(--wheat-light); }
+  .product-tile .pname{ font-weight:700; font-size:13px; }
+  .product-tile .pcat{ font-size:11px; color:var(--muted); }
+  .product-tile .pprice{ font-size:13.5px; font-weight:700; color:var(--crust); margin-top:4px; }
+  .tile-grid{ display:grid; grid-template-columns:repeat(3,1fr); gap:10px; }
+  .ticket{ position:sticky; top:0; }
+  .ticket-line{ display:flex; justify-content:space-between; font-size:12.5px; padding:7px 0; border-bottom:1px dashed var(--border); }
+  .ticket-line .qty-ctrl{ display:flex; align-items:center; gap:6px; }
+  .qty-ctrl button{ width:20px; height:20px; border-radius:5px; border:1px solid var(--border); background:#fff; cursor:pointer; line-height:1; }
+  .totals-row{ display:flex; justify-content:space-between; font-size:13px; padding:4px 0; }
+  .totals-row.total{ font-weight:800; font-size:16px; color:var(--crust-dark); border-top:1px solid var(--border); padding-top:10px; margin-top:6px; }
+  .empty-ticket{ color:var(--muted); font-size:12.5px; text-align:center; padding:30px 0; }
+
+  .toast{
+    position:fixed; bottom:24px; right:24px; background:var(--crust-dark); color:#fff; padding:13px 18px;
+    border-radius:9px; font-size:13px; box-shadow:0 10px 30px -10px rgba(0,0,0,.4); display:none; z-index:50; max-width:320px;
+  }
+  .toast.show{ display:block; }
+  .toast.alert{ background:var(--paprika); }
+
+  .bars{ display:flex; align-items:flex-end; gap:12px; height:160px; padding-top:10px; }
+  .bar-col{ flex:1; display:flex; flex-direction:column; align-items:center; justify-content:flex-end; gap:6px; height:100%; }
+  .bar{ width:70%; background:linear-gradient(180deg,var(--wheat),var(--crust)); border-radius:5px 5px 0 0; }
+  .bar-label{ font-size:11px; color:var(--muted); }
+  .bar-val{ font-size:11px; font-weight:700; color:var(--crust-dark); }
+
+  .modal-bg{ position:fixed; inset:0; background:rgba(58,42,29,.35); display:none; align-items:center; justify-content:center; z-index:40; }
+  .modal-bg.show{ display:flex; }
+  .modal{ width:420px; background:#fff; border-radius:12px; padding:24px; box-shadow:0 30px 60px -20px rgba(0,0,0,.35); }
+  .modal h3{ margin:0 0 16px; font-size:16px; color:var(--crust-dark); }
+  .modal .field input, .modal .field select{ font-size:13px; }
+  .modal-actions{ display:flex; justify-content:flex-end; gap:8px; margin-top:18px; }
+  .locked-msg{ padding:60px 20px; text-align:center; color:var(--muted); }
+  .locked-msg .ic{ font-size:34px; margin-bottom:10px; }
+</style>
+</head>
+<body>
+
+<!-- ===================== LOGIN ===================== -->
+<div id="login-screen">
+  <div class="login-card">
+    <div class="login-mark">🥖</div>
+    <h1>Trigo Dorado</h1>
+    <p class="login-sub">Sistema de Gestión de Ventas e Inventario</p>
+
+    <div class="role-toggle">
+      <button class="role-btn active" id="roleAdminBtn" onclick="selectRole('admin')">Administrador</button>
+      <button class="role-btn" id="roleVendBtn" onclick="selectRole('vendedor')">Vendedor</button>
+    </div>
+
+    <div class="field">
+      <label>Usuario</label>
+      <input id="loginUser" value="admin.trigo">
+    </div>
+    <div class="field">
+      <label>Contraseña</label>
+      <input type="password" id="loginPass" value="••••••••">
+    </div>
+    <button class="btn-primary" onclick="doLogin()">Iniciar sesión</button>
+    <p class="login-hint">Prototipo de demostración — las credenciales no se validan contra un servidor real. Seleccione un rol y presione «Iniciar sesión» para explorar el sistema simulado.</p>
+  </div>
+</div>
+
+<!-- ===================== APP ===================== -->
+<div id="app" style="display:flex;">
+  <aside class="sidebar">
+    <div class="brand"><span class="mark">🥖</span> Trigo Dorado</div>
+    <button class="nav-item active" data-view="dashboard" onclick="showView('dashboard')"><span class="ic">◈</span> Panel principal</button>
+    <button class="nav-item" data-view="ventas" onclick="showView('ventas')"><span class="ic">🧾</span> Registrar venta</button>
+    <button class="nav-item" data-view="inventario" onclick="showView('inventario')"><span class="ic">📦</span> Inventario</button>
+    <button class="nav-item" data-view="productos" onclick="showView('productos')"><span class="ic">🍞</span> Productos</button>
+    <button class="nav-item" data-view="proveedores" onclick="showView('proveedores')"><span class="ic">🚚</span> Proveedores</button>
+    <button class="nav-item" data-view="reportes" onclick="showView('reportes')"><span class="ic">📊</span> Reportes</button>
+    <button class="nav-item" data-view="usuarios" onclick="showView('usuarios')"><span class="ic">👤</span> Usuarios</button>
+
+    <div class="sidebar-foot">
+      <div class="who">Sesión activa<b id="whoName">Administrador</b></div>
+      <button class="logout-btn" onclick="doLogout()">Cerrar sesión</button>
+    </div>
+  </aside>
+
+  <div class="main">
+    <div class="topbar">
+      <div>
+        <h2 id="viewTitle">Panel principal</h2>
+        <div class="sub" id="viewSub">Resumen general de la panadería</div>
+      </div>
+      <div class="clock" id="clock"></div>
+    </div>
+
+    <div class="content">
+
+      <!-- DASHBOARD -->
+      <div class="view active" id="view-dashboard">
+        <div class="stat-grid">
+          <div class="stat-card"><div class="label">Ventas de hoy</div><div class="value" id="statVentasHoy">$0.00</div><div class="delta up">▲ actualizado en vivo</div></div>
+          <div class="stat-card"><div class="label">Transacciones hoy</div><div class="value" id="statTransHoy">0</div><div class="delta up">Módulo de ventas</div></div>
+          <div class="stat-card"><div class="label">Productos con bajo stock</div><div class="value" id="statBajoStock">0</div><div class="delta warn">Requiere reposición</div></div>
+          <div class="stat-card"><div class="label">Proveedores activos</div><div class="value" id="statProveedores">0</div><div class="delta up">Registrados</div></div>
+        </div>
+
+        <div class="grid-2">
+          <div class="panel">
+            <div class="panel-head"><h3>Últimas ventas registradas</h3><span class="hint">Módulo de ventas · CU-03</span></div>
+            <table>
+              <thead><tr><th>Comprobante</th><th>Productos</th><th>Total</th><th>Hora</th></tr></thead>
+              <tbody id="dashVentasBody"></tbody>
+            </table>
+          </div>
+          <div class="panel">
+            <div class="panel-head"><h3>Alertas de inventario</h3><span class="hint">RF-03</span></div>
+            <table>
+              <thead><tr><th>Producto</th><th>Stock</th><th>Estado</th></tr></thead>
+              <tbody id="dashAlertasBody"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- VENTAS (POS) -->
+      <div class="view" id="view-ventas">
+        <div class="pos-grid">
+          <div>
+            <div class="panel">
+              <div class="panel-head"><h3>Catálogo de productos</h3><span class="hint">Toque un producto para agregarlo a la venta</span></div>
+              <input class="search" id="posSearch" placeholder="Buscar producto..." oninput="renderPOSCatalog()">
+              <div class="tile-grid" id="posCatalog" style="margin-top:14px;"></div>
+            </div>
+          </div>
+          <div class="panel ticket">
+            <div class="panel-head"><h3>Comprobante de venta</h3></div>
+            <div id="ticketBody"><div class="empty-ticket">Aún no ha agregado productos</div></div>
+            <div style="margin-top:12px;">
+              <div class="totals-row"><span>Subtotal</span><span id="tSubtotal">$0.00</span></div>
+              <div class="totals-row"><span>IVA (15%)</span><span id="tIva">$0.00</span></div>
+              <div class="totals-row total"><span>Total</span><span id="tTotal">$0.00</span></div>
+            </div>
+            <button class="btn primary" style="width:100%;margin-top:14px;" onclick="confirmarVenta()">Confirmar venta</button>
+            <button class="btn ghost" style="width:100%;margin-top:6px;" onclick="cancelarVenta()">Cancelar</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- INVENTARIO -->
+      <div class="view" id="view-inventario">
+        <div class="panel">
+          <div class="panel-head"><h3>Stock actual de productos</h3><span class="hint">CU-04 · Consultar inventario</span></div>
+          <div class="toolbar">
+            <input class="search" id="invSearch" placeholder="Buscar producto..." oninput="renderInventario()">
+          </div>
+          <table>
+            <thead><tr><th>Código</th><th>Producto</th><th>Categoría</th><th>Stock actual</th><th>Stock mínimo</th><th>Estado</th></tr></thead>
+            <tbody id="invBody"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- PRODUCTOS (admin) -->
+      <div class="view" id="view-productos">
+        <div id="productosLocked" class="panel locked-msg" style="display:none;">
+          <div class="ic">🔒</div>
+          <b>Acceso restringido</b>
+          <p>El rol Vendedor no tiene permisos para gestionar el catálogo de productos (RNF-03 · control de acceso por roles).</p>
+        </div>
+        <div id="productosContent">
+          <div class="panel">
+            <div class="panel-head">
+              <h3>Gestión de productos</h3>
+              <button class="btn primary sm" onclick="openProductModal()">+ Nuevo producto</button>
+            </div>
+            <div class="toolbar"><input class="search" id="prodSearch" placeholder="Buscar producto..." oninput="renderProductos()"></div>
+            <table>
+              <thead><tr><th>Código</th><th>Nombre</th><th>Categoría</th><th>P. compra</th><th>P. venta</th><th>Stock</th><th>Stock mín.</th><th></th></tr></thead>
+              <tbody id="prodBody"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- PROVEEDORES (admin) -->
+      <div class="view" id="view-proveedores">
+        <div id="proveedoresLocked" class="panel locked-msg" style="display:none;">
+          <div class="ic">🔒</div>
+          <b>Acceso restringido</b>
+          <p>La gestión de proveedores está disponible únicamente para el rol Administrador.</p>
+        </div>
+        <div id="proveedoresContent">
+          <div class="panel">
+            <div class="panel-head">
+              <h3>Proveedores registrados</h3>
+              <button class="btn primary sm" onclick="openProviderModal()">+ Nuevo proveedor</button>
+            </div>
+            <table>
+              <thead><tr><th>Nombre comercial</th><th>RUC</th><th>Teléfono</th><th>Correo</th><th></th></tr></thead>
+              <tbody id="provBody"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- REPORTES (admin) -->
+      <div class="view" id="view-reportes">
+        <div id="reportesLocked" class="panel locked-msg" style="display:none;">
+          <div class="ic">🔒</div>
+          <b>Acceso restringido</b>
+          <p>Los reportes financieros están disponibles únicamente para el rol Administrador (RNF-03).</p>
+        </div>
+        <div id="reportesContent">
+          <div class="grid-2">
+            <div class="panel">
+              <div class="panel-head"><h3>Ventas de la semana</h3><span class="hint">RF-05 · Reportes</span></div>
+              <div class="bars" id="reportBars"></div>
+            </div>
+            <div class="panel">
+              <div class="panel-head"><h3>Productos más vendidos</h3></div>
+              <table><thead><tr><th>Producto</th><th>Unidades</th></tr></thead><tbody id="topProdBody"></tbody></table>
+            </div>
+          </div>
+          <div class="panel">
+            <div class="panel-head"><h3>Exportar reporte</h3><span class="hint">Simulación de exportación a PDF</span></div>
+            <button class="btn primary" onclick="showToast('Reporte de ventas mensual exportado en PDF (simulación).')">Exportar ventas mensuales a PDF</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- USUARIOS (admin) -->
+      <div class="view" id="view-usuarios">
+        <div id="usuariosLocked" class="panel locked-msg" style="display:none;">
+          <div class="ic">🔒</div>
+          <b>Acceso restringido</b>
+          <p>La administración de usuarios está disponible únicamente para el rol Administrador (CU-07).</p>
+        </div>
+        <div id="usuariosContent">
+          <div class="panel">
+            <div class="panel-head"><h3>Usuarios del sistema</h3><span class="hint">CU-07 · Administrar usuarios</span></div>
+            <table>
+              <thead><tr><th>Usuario</th><th>Nombre</th><th>Rol</th><th>Estado</th><th></th></tr></thead>
+              <tbody id="userBody"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<!-- Modal: producto -->
+<div class="modal-bg" id="prodModalBg">
+  <div class="modal">
+    <h3>Nuevo producto</h3>
+    <div class="field"><label>Nombre</label><input id="pmNombre" placeholder="Ej. Pan de dulce"></div>
+    <div class="field"><label>Categoría</label><input id="pmCategoria" placeholder="Ej. Panadería"></div>
+    <div class="field"><label>Precio de compra</label><input id="pmCompra" type="number" step="0.01" value="0.20"></div>
+    <div class="field"><label>Precio de venta</label><input id="pmVenta" type="number" step="0.01" value="0.35"></div>
+    <div class="field"><label>Stock inicial</label><input id="pmStock" type="number" value="50"></div>
+    <div class="field"><label>Stock mínimo</label><input id="pmMin" type="number" value="10"></div>
+    <div class="modal-actions">
+      <button class="btn ghost" onclick="closeModal('prodModalBg')">Cancelar</button>
+      <button class="btn primary" onclick="saveProduct()">Guardar producto</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: proveedor -->
+<div class="modal-bg" id="provModalBg">
+  <div class="modal">
+    <h3>Nuevo proveedor</h3>
+    <div class="field"><label>Nombre comercial</label><input id="vmNombre" placeholder="Ej. Distribuidora Harinas del Valle"></div>
+    <div class="field"><label>RUC</label><input id="vmRuc" placeholder="1790000000001"></div>
+    <div class="field"><label>Teléfono</label><input id="vmTelefono" placeholder="0999999999"></div>
+    <div class="field"><label>Correo electrónico</label><input id="vmCorreo" placeholder="contacto@proveedor.com"></div>
+    <div class="modal-actions">
+      <button class="btn ghost" onclick="closeModal('provModalBg')">Cancelar</button>
+      <button class="btn primary" onclick="saveProvider()">Guardar proveedor</button>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ================= DATOS SIMULADOS (en memoria) ================= */
+let currentRole = 'admin';
+
+let productos = [
+  {codigo:'P001', nombre:'Pan de dulce', categoria:'Panadería', compra:0.15, venta:0.35, stock:120, min:30},
+  {codigo:'P002', nombre:'Pan de agua', categoria:'Panadería', compra:0.10, venta:0.25, stock:8, min:20},
+  {codigo:'P003', nombre:'Quesadilla', categoria:'Repostería', compra:0.30, venta:0.60, stock:45, min:15},
+  {codigo:'P004', nombre:'Torta de chocolate (porción)', categoria:'Repostería', compra:0.70, venta:1.50, stock:12, min:10},
+  {codigo:'P005', nombre:'Bocadito salado', categoria:'Bocaditos', compra:0.20, venta:0.45, stock:60, min:20},
+  {codigo:'P006', nombre:'Papas fritas snack', categoria:'Snacks', compra:0.35, venta:0.75, stock:3, min:15},
+  {codigo:'P007', nombre:'Gaseosa 350ml', categoria:'Bebidas', compra:0.40, venta:0.80, stock:70, min:20},
+  {codigo:'P008', nombre:'Agua sin gas 500ml', categoria:'Bebidas', compra:0.25, venta:0.50, stock:55, min:15},
+  {codigo:'P009', nombre:'Café en vaso', categoria:'Bebidas', compra:0.20, venta:0.60, stock:40, min:15},
+];
+
+let proveedores = [
+  {nombre:'Distribuidora Harinas del Valle', ruc:'1790011223001', telefono:'022345678', correo:'ventas@harinasdelvalle.ec'},
+  {nombre:'Lácteos Andinos S.A.', ruc:'1791122334001', telefono:'0991234567', correo:'contacto@lacteosandinos.ec'},
+];
+
+let usuarios = [
+  {usuario:'admin.trigo', nombre:'Luis Marquez (Administrador)', rol:'Administrador', estado:'Activo'},
+  {usuario:'cajero.maria', nombre:'María Pérez (Cajera)', rol:'Vendedor', estado:'Activo'},
+  {usuario:'cajero.juan', nombre:'Juan Díaz (Cajero)', rol:'Vendedor', estado:'Bloqueado'},
+];
+
+let ventasHoy = [
+  {folio:'V-1042', items:'Pan de dulce x4, Gaseosa x1', total:2.20, hora:'09:14'},
+  {folio:'V-1043', items:'Quesadilla x2, Café x1', total:1.80, hora:'09:47'},
+  {folio:'V-1044', items:'Bocadito salado x3', total:1.35, hora:'10:05'},
+];
+
+let ticket = []; // {codigo, nombre, precio, cantidad}
+let ventaCounter = 1045;
+
+/* ================= LOGIN ================= */
+function selectRole(role){
+  currentRole = role;
+  document.getElementById('roleAdminBtn').classList.toggle('active', role==='admin');
+  document.getElementById('roleVendBtn').classList.toggle('active', role==='vendedor');
+  document.getElementById('loginUser').value = role==='admin' ? 'admin.trigo' : 'cajero.maria';
+}
+function doLogin(){
+  document.getElementById('login-screen').style.display='none';
+  document.getElementById('app').style.display='flex';
+  document.getElementById('whoName').textContent = currentRole==='admin' ? 'Administrador' : 'Vendedor';
+  applyRoleVisibility();
+  showView('dashboard');
+  renderAll();
+}
+function doLogout(){
+  document.getElementById('app').style.display='none';
+  document.getElementById('login-screen').style.display='flex';
+  ticket = [];
+}
+function applyRoleVisibility(){
+  const restricted = ['productos','proveedores','reportes','usuarios'];
+  document.querySelectorAll('.nav-item').forEach(btn=>{
+    const v = btn.dataset.view;
+    if(restricted.includes(v)){
+      btn.style.display = currentRole==='admin' ? 'flex' : 'none';
+    }
+  });
+  restricted.forEach(v=>{
+    document.getElementById(v+'Locked').style.display = currentRole==='admin' ? 'none' : 'block';
+    document.getElementById(v+'Content').style.display = currentRole==='admin' ? 'block' : 'none';
+  });
+}
+
+/* ================= NAV ================= */
+const titles = {
+  dashboard:['Panel principal','Resumen general de la panadería'],
+  ventas:['Registrar venta','Punto de venta · Módulo de ventas (RF-02)'],
+  inventario:['Inventario','Consulta de stock disponible (RF-03)'],
+  productos:['Gestión de productos','Catálogo de productos (RF-01)'],
+  proveedores:['Proveedores','Gestión de proveedores (RF-04)'],
+  reportes:['Reportes','Reportes de ventas e inventario (RF-05)'],
+  usuarios:['Usuarios','Administración de usuarios (RF-06)'],
+};
+function showView(name){
+  document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
+  document.getElementById('view-'+name).classList.add('active');
+  document.querySelectorAll('.nav-item').forEach(b=>b.classList.toggle('active', b.dataset.view===name));
+  document.getElementById('viewTitle').textContent = titles[name][0];
+  document.getElementById('viewSub').textContent = titles[name][1];
+  if(name==='ventas') renderPOSCatalog();
+  if(name==='inventario') renderInventario();
+  if(name==='productos') renderProductos();
+  if(name==='proveedores') renderProveedores();
+  if(name==='reportes') renderReportes();
+  if(name==='usuarios') renderUsuarios();
+}
+
+/* ================= HELPERS ================= */
+function money(n){ return '$'+n.toFixed(2); }
+function stockBadge(p){
+  if(p.stock<=0) return '<span class="badge out">Agotado</span>';
+  if(p.stock<=p.min) return '<span class="badge low">Stock bajo</span>';
+  return '<span class="badge ok">Normal</span>';
+}
+function showToast(msg, alert){
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = 'toast show' + (alert?' alert':'');
+  clearTimeout(window._toastTimer);
+  window._toastTimer = setTimeout(()=>{ t.classList.remove('show'); }, 3800);
+}
+function closeModal(id){ document.getElementById(id).classList.remove('show'); }
+
+/* ================= DASHBOARD ================= */
+function renderDashboard(){
+  const total = ventasHoy.reduce((a,v)=>a+v.total,0);
+  document.getElementById('statVentasHoy').textContent = money(total);
+  document.getElementById('statTransHoy').textContent = ventasHoy.length;
+  document.getElementById('statBajoStock').textContent = productos.filter(p=>p.stock<=p.min).length;
+  document.getElementById('statProveedores').textContent = proveedores.length;
+
+  document.getElementById('dashVentasBody').innerHTML = ventasHoy.slice(-5).reverse().map(v=>
+    `<tr><td>${v.folio}</td><td>${v.items}</td><td>${money(v.total)}</td><td>${v.hora}</td></tr>`).join('');
+
+  const alertas = productos.filter(p=>p.stock<=p.min);
+  document.getElementById('dashAlertasBody').innerHTML = alertas.length ? alertas.map(p=>
+    `<tr><td>${p.nombre}</td><td>${p.stock}</td><td>${stockBadge(p)}</td></tr>`).join('')
+    : '<tr><td colspan="3" style="color:var(--muted);">Sin alertas de inventario</td></tr>';
+}
+
+/* ================= VENTAS / POS ================= */
+function renderPOSCatalog(){
+  const q = (document.getElementById('posSearch').value||'').toLowerCase();
+  const list = productos.filter(p=>p.nombre.toLowerCase().includes(q));
+  document.getElementById('posCatalog').innerHTML = list.map(p=>`
+    <div class="product-tile" onclick="addToTicket('${p.codigo}')">
+      <span class="pname">${p.nombre}</span>
+      <span class="pcat">${p.categoria} · Stock: ${p.stock}</span>
+      <span class="pprice">${money(p.venta)}</span>
+    </div>`).join('');
+}
+function addToTicket(codigo){
+  const p = productos.find(x=>x.codigo===codigo);
+  if(p.stock<=0){ showToast('No hay stock disponible de "'+p.nombre+'".', true); return; }
+  let line = ticket.find(l=>l.codigo===codigo);
+  if(line){
+    if(line.cantidad>=p.stock){ showToast('Stock insuficiente para agregar otra unidad.', true); return; }
+    line.cantidad++;
+  } else {
+    ticket.push({codigo:p.codigo, nombre:p.nombre, precio:p.venta, cantidad:1});
+  }
+  renderTicket();
+}
+function changeQty(codigo, delta){
+  const line = ticket.find(l=>l.codigo===codigo);
+  const p = productos.find(x=>x.codigo===codigo);
+  line.cantidad += delta;
+  if(line.cantidad<=0){ ticket = ticket.filter(l=>l.codigo!==codigo); }
+  else if(line.cantidad>p.stock){ line.cantidad = p.stock; showToast('Stock máximo alcanzado.', true); }
+  renderTicket();
+}
+function renderTicket(){
+  const body = document.getElementById('ticketBody');
+  if(ticket.length===0){
+    body.innerHTML = '<div class="empty-ticket">Aún no ha agregado productos</div>';
+  } else {
+    body.innerHTML = ticket.map(l=>`
+      <div class="ticket-line">
+        <span>${l.nombre}</span>
+        <span class="qty-ctrl">
+          <button onclick="changeQty('${l.codigo}',-1)">−</button>
+          ${l.cantidad}
+          <button onclick="changeQty('${l.codigo}',1)">+</button>
+          <b style="margin-left:8px;">${money(l.precio*l.cantidad)}</b>
+        </span>
+      </div>`).join('');
+  }
+  const subtotal = ticket.reduce((a,l)=>a+l.precio*l.cantidad,0);
+  const iva = subtotal*0.15;
+  document.getElementById('tSubtotal').textContent = money(subtotal);
+  document.getElementById('tIva').textContent = money(iva);
+  document.getElementById('tTotal').textContent = money(subtotal+iva);
+}
+function cancelarVenta(){ ticket=[]; renderTicket(); }
+function confirmarVenta(){
+  if(ticket.length===0){ showToast('Agregue al menos un producto antes de confirmar.', true); return; }
+  const subtotal = ticket.reduce((a,l)=>a+l.precio*l.cantidad,0);
+  const total = subtotal*1.15;
+  ticket.forEach(l=>{
+    const p = productos.find(x=>x.codigo===l.codigo);
+    p.stock -= l.cantidad;
+  });
+  const folio = 'V-'+(ventaCounter++);
+  const items = ticket.map(l=>l.nombre+' x'+l.cantidad).join(', ');
+  const now = new Date();
+  const hora = now.getHours().toString().padStart(2,'0')+':'+now.getMinutes().toString().padStart(2,'0');
+  ventasHoy.push({folio, items, total, hora});
+  const bajoStock = ticket.map(l=>productos.find(p=>p.codigo===l.codigo)).filter(p=>p.stock<=p.min);
+  ticket = [];
+  renderTicket();
+  renderAll();
+  if(bajoStock.length){
+    showToast('Venta '+folio+' registrada. Atención: "'+bajoStock[0].nombre+'" alcanzó su stock mínimo.', true);
+  } else {
+    showToast('Venta '+folio+' registrada correctamente. Inventario actualizado.');
+  }
+}
+
+/* ================= INVENTARIO ================= */
+function renderInventario(){
+  const q = (document.getElementById('invSearch').value||'').toLowerCase();
+  const list = productos.filter(p=>p.nombre.toLowerCase().includes(q));
+  document.getElementById('invBody').innerHTML = list.map(p=>`
+    <tr><td>${p.codigo}</td><td>${p.nombre}</td><td>${p.categoria}</td><td>${p.stock}</td><td>${p.min}</td><td>${stockBadge(p)}</td></tr>
+  `).join('');
+}
+
+/* ================= PRODUCTOS ================= */
+function renderProductos(){
+  const q = (document.getElementById('prodSearch').value||'').toLowerCase();
+  const list = productos.filter(p=>p.nombre.toLowerCase().includes(q));
+  document.getElementById('prodBody').innerHTML = list.map(p=>`
+    <tr>
+      <td>${p.codigo}</td><td>${p.nombre}</td><td>${p.categoria}</td>
+      <td>${money(p.compra)}</td><td>${money(p.venta)}</td><td>${p.stock}</td><td>${p.min}</td>
+      <td><button class="btn sm danger" onclick="deleteProduct('${p.codigo}')">Inactivar</button></td>
+    </tr>`).join('');
+}
+function openProductModal(){ document.getElementById('prodModalBg').classList.add('show'); }
+function saveProduct(){
+  const n = document.getElementById('pmNombre').value.trim();
+  if(!n){ showToast('Ingrese el nombre del producto.', true); return; }
+  const nextNum = (productos.length+1).toString().padStart(3,'0');
+  productos.push({
+    codigo:'P'+nextNum,
+    nombre:n,
+    categoria: document.getElementById('pmCategoria').value || 'General',
+    compra: parseFloat(document.getElementById('pmCompra').value)||0,
+    venta: parseFloat(document.getElementById('pmVenta').value)||0,
+    stock: parseInt(document.getElementById('pmStock').value)||0,
+    min: parseInt(document.getElementById('pmMin').value)||0,
+  });
+  closeModal('prodModalBg');
+  renderAll();
+  showToast('Producto "'+n+'" registrado correctamente en el catálogo.');
+}
+function deleteProduct(codigo){
+  productos = productos.filter(p=>p.codigo!==codigo);
+  renderAll();
+  showToast('Producto inactivado del catálogo.');
+}
+
+/* ================= PROVEEDORES ================= */
+function renderProveedores(){
+  document.getElementById('provBody').innerHTML = proveedores.map((v,i)=>`
+    <tr><td>${v.nombre}</td><td>${v.ruc}</td><td>${v.telefono}</td><td>${v.correo}</td>
+    <td><button class="btn sm ghost" onclick="deleteProvider(${i})">Eliminar</button></td></tr>`).join('');
+}
+function openProviderModal(){ document.getElementById('provModalBg').classList.add('show'); }
+function saveProvider(){
+  const n = document.getElementById('vmNombre').value.trim();
+  if(!n){ showToast('Ingrese el nombre comercial del proveedor.', true); return; }
+  proveedores.push({
+    nombre:n,
+    ruc:document.getElementById('vmRuc').value,
+    telefono:document.getElementById('vmTelefono').value,
+    correo:document.getElementById('vmCorreo').value,
+  });
+  closeModal('provModalBg');
+  renderAll();
+  showToast('Proveedor "'+n+'" registrado correctamente.');
+}
+function deleteProvider(i){ proveedores.splice(i,1); renderAll(); showToast('Proveedor eliminado.'); }
+
+/* ================= REPORTES ================= */
+function renderReportes(){
+  const dias = [['Lun',18.4],['Mar',21.1],['Mié',24.6],['Jue',19.8],['Vie',27.3],['Sáb',32.5],['Dom',15.9]];
+  const max = Math.max(...dias.map(d=>d[1]));
+  document.getElementById('reportBars').innerHTML = dias.map(d=>`
+    <div class="bar-col">
+      <span class="bar-val">$${d[1].toFixed(0)}</span>
+      <div class="bar" style="height:${(d[1]/max*100).toFixed(0)}%;"></div>
+      <span class="bar-label">${d[0]}</span>
+    </div>`).join('');
+
+  const top = [['Pan de dulce',186],['Gaseosa 350ml',142],['Bocadito salado',119],['Café en vaso',97],['Pan de agua',88]];
+  document.getElementById('topProdBody').innerHTML = top.map(t=>`<tr><td>${t[0]}</td><td>${t[1]}</td></tr>`).join('');
+}
+
+/* ================= USUARIOS ================= */
+function renderUsuarios(){
+  document.getElementById('userBody').innerHTML = usuarios.map(u=>`
+    <tr>
+      <td>${u.usuario}</td><td>${u.nombre}</td>
+      <td><span class="badge ${u.rol==='Administrador'?'role-admin':'role-vend'}">${u.rol}</span></td>
+      <td>${u.estado==='Activo' ? '<span class="badge ok">Activo</span>' : '<span class="badge out">Bloqueado</span>'}</td>
+      <td><button class="btn sm ghost" onclick="toggleUser('${u.usuario}')">${u.estado==='Activo'?'Bloquear':'Activar'}</button></td>
+    </tr>`).join('');
+}
+function toggleUser(usuario){
+  const u = usuarios.find(x=>x.usuario===usuario);
+  u.estado = u.estado==='Activo' ? 'Bloqueado' : 'Activo';
+  renderUsuarios();
+}
+
+/* ================= RENDER ALL / CLOCK ================= */
+function renderAll(){
+  renderDashboard();
+  renderPOSCatalog();
+  renderTicket();
+  renderInventario();
+  renderProductos();
+  renderProveedores();
+  renderReportes();
+  renderUsuarios();
+}
+function tickClock(){
+  const now = new Date();
+  const days=['domingo','lunes','martes','miércoles','jueves','viernes','sábado'];
+  const h = now.getHours().toString().padStart(2,'0');
+  const m = now.getMinutes().toString().padStart(2,'0');
+  document.getElementById('clock').textContent = days[now.getDay()]+' · '+h+':'+m;
+}
+tickClock(); setInterval(tickClock, 1000*30);
+</script>
+</body>
+</html>
